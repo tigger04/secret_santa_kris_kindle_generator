@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+source ~/bin/helper.sh
+source ~/bin/helper-funcs.sh
+
+# decide whether this is appropriate:
+set -e
+
+cd "$command_dir" || die
+
+function usage {
+	 cat <<EOM
+Usage: $(basename "$0") [OPTION]...
+
+  -a VALUE    argument description
+              line two
+              line three
+  -b VALUE    argument description
+  -c          switch description
+              line two
+  -d          switch description
+              line two
+              line three
+              line four
+  -h          display help
+EOM
+
+	 exit 2
+}
+
+# init switch flags
+a=VALUE1
+b=""
+c=0
+d=0
+
+while getopts ":a:b:cdh" optKey; do
+	 case "$optKey" in
+		  a)
+			   a=$OPTARG
+			   ;;
+		  b)
+			   b=$OPTARG
+			   ;;
+		  c)
+			   c=1
+			   ;;
+		  d)
+			   d=1
+			   ;;
+		  h|*)
+			   usage
+			   ;;
+	 esac
+done
+
+shift $((OPTIND - 1))
+
+
+doit () {
+    declare -p a b c d
+}
+
+
+if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+    doit
+else
+    echo "Happy debugging!"
+fi
+
