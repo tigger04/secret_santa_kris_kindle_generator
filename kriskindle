@@ -6,7 +6,10 @@ source ~/bin/helper.sh
 # decide whether this is appropriate:
 set -e
 
-# cd "$command_dir" || die
+# init switch flags
+participants=participants.txt
+exclusions=exclusions
+fixes=fixes
 
 function usage {
 	 cat <<EOM
@@ -15,21 +18,16 @@ Usage: $(basename "$0") [OPTION]...
   -g            generate example input files and folders
                 at current directory
   -p <FILE>     location of participant file
-                [default: participants.data]
+                [default: ${bold}${participants}$ansi_off]
   -e <FILE>     exclusions folder
-                [default: exclusions.data]
+                [default: ${bold}${exclusions}$ansi_off/]
   -f <FILE>     fixes folder
-                [default: fixes.data]
+                [default: ${bold}${fixes}$ansi_off/]
   -h            display help
 EOM
 
 	 exit 2
 }
-
-# init switch flags
-participants=participants.data
-exclusions=exclusions.data
-fixes=fixes.data
 
 while getopts ":gepxf" optKey; do
 	 case "$optKey" in
