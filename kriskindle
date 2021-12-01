@@ -29,10 +29,42 @@ EOM
 	 exit 2
 }
 
+
+checks () {
+    [ -n "$debug" ] && declare -p participants exclusions fixes
+    [ -n "$participants" ] && [ -f "$participants" ] || quit "cannot find participants file: $participants"
+    num_participants="$( find "$participants" -type f | wc -l )"
+    [ $num_particpants -gt 0 ] || quit no particpants defined
+    [ -n "$exclusions" ] && [ -d "$exclusions" ] || info "no exclusions folder found: $exclusions"
+    [ -n "$fixes" ] && [ -d "$fixes" ] || info "no fixes folder found: $fixes"
+}
+
+
+generate_example_files () {
+    [ -e "$participants" ] && quit "$participants" already exists
+
+    cat > "$participants" <<eof
+Pike
+Chin-Riley
+Kirk
+Spock
+Picard
+Riker
+Sisko
+Nerys
+Janeway
+Chakotay
+O'Brien
+T'Pol
+eof
+
+    exit 0
+}
+
 while getopts ":gepxf" optKey; do
 	 case "$optKey" in
         g)
-            generate=true
+            generate_example_files
             ;;
 		  e)
 			   exclusions="$OPTARG"
@@ -52,21 +84,8 @@ done
 shift $((OPTIND - 1))
 
 
-checks () {
-    [ -n "$debug" ] && declare -p participants exclusions fixes
-    [ -n "$participants" ] && [ -d "$participants" ] || quit "cannot find participants folder: $participants"
-    num_participants="$( find "$participants" -type f | wc -l )"
-    [ $num_particpants -gt 0 ] || quit no particpants defined
-    [ -n "$exclusions" ] && [ -d "$exclusions" ] || info "no exclusions folder found: $exclusions"
-    [ -n "$fixes" ] && [ -d "$fixes" ] || info "no fixes folder found: $fixes"
-}
-
-generate_example_files () {
-    : 
-}
-
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-    [ -n "$generate" ] && generate_example_files
+
     checks
 else
     echo "Happy debugging!"
