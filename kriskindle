@@ -1,52 +1,49 @@
 #!/usr/bin/env bash
 
+#shellcheck source=helper.sh
 source ~/bin/helper.sh
-source ~/bin/helper-funcs.sh
 
 # decide whether this is appropriate:
 set -e
 
-cd "$command_dir" || die
+# cd "$command_dir" || die
 
 function usage {
 	 cat <<EOM
 Usage: $(basename "$0") [OPTION]...
 
-  -a VALUE    argument description
-              line two
-              line three
-  -b VALUE    argument description
-  -c          switch description
-              line two
-  -d          switch description
-              line two
-              line three
-              line four
-  -h          display help
+  -g            generate example input files and folders
+                at current directory
+  -p <FILE>     location of participant file
+                [default: participants.data]
+  -e <FILE>     exclusions folder
+                [default: exclusions.data]
+  -f <FILE>     fixes folder
+                [default: fixes.data]
+  -h            display help
 EOM
 
 	 exit 2
 }
 
 # init switch flags
-a=VALUE1
-b=""
-c=0
-d=0
+participants=participants.data
+exclusions=exclusions.data
+fixes=fixes.data
 
-while getopts ":a:b:cdh" optKey; do
+while getopts ":gepxf" optKey; do
 	 case "$optKey" in
-		  a)
-			   a=$OPTARG
+        g)
+            generate=true
+            ;;
+		  e)
+			   exclusions="$OPTARG"
 			   ;;
-		  b)
-			   b=$OPTARG
+		  p)
+			   participants="$OPTARG"
 			   ;;
-		  c)
-			   c=1
-			   ;;
-		  d)
-			   d=1
+		  f)
+			   fixes="$OPTARG"
 			   ;;
 		  h|*)
 			   usage
@@ -57,13 +54,22 @@ done
 shift $((OPTIND - 1))
 
 
-doit () {
-    declare -p a b c d
+checks () {
+    [ -n "$debug" ] && declare -p participants exclusions fixes
+    [ -n "$participants" ] && [ -d "$participants" ] || quit "cannot find participants folder: $participants"
+    num_participants="$( find "$participants" -type f | wc -l )"
+    [ $num_particpants -gt 0 ] || quit no particpants defined
+    [ -n "$exclusions" ] && [ -d "$exclusions" ] || info "no exclusions folder found: $exclusions"
+    [ -n "$fixes" ] && [ -d "$fixes" ] || info "no fixes folder found: $fixes"
 }
 
+generate_example_files () {
+    : 
+}
 
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-    doit
+    [ -n "$generate" ] && generate_example_files
+    checks
 else
     echo "Happy debugging!"
 fi
