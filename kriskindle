@@ -8,9 +8,9 @@ set -e
 
 # init switch flags
 run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
-participants_dir="participants.$run_id"
-exclusions_dir="exclusions.$run_id"
-fixes_dir="fixes.$run_id"
+participants="participants.$run_id"
+exclusions="exclusions.$run_id"
+fixes="fixes.$run_id"
 
 generate () {
 
