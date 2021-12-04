@@ -7,41 +7,51 @@ source ~/bin/helper.sh
 set -e
 
 # init switch flags
-participants=participants.txt
-exclusions=exclusions
-fixes=fixes
+run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
+participants="participants.$run_id"
+exclusions="exclusions.$run_id"
+fixes="fixes.$run_id"
+
+generate () {
+
+    cat - <<<eof
+    Picard =Nerys
+    Riker -Picard
+    Kirk -Spock
+    Spock -Kirk
+    Sisko -Nerys -Worf -O\'Brien
+    Janeway -Chakotay -Kirk -Picard -Sisko
+    Chakotay -Janeway
+    T\'Pol
+    O\'Brien
+    Worf =Picard
+    eof
+    
+}
 
 function usage {
-	 cat <<EOM
-Usage: $(basename "$0") [OPTION]...
+	 cat <<<eom
+    Usage: $(basename "$0") [OPTION]...
 
-  -g            generate example input files and folders
-                at current directory
-  -p <FILE>     location of participant file
-                [default: ${bold}${participants}$ansi_off]
-  -e <FILE>     exclusions folder
-                [default: ${bold}${exclusions}$ansi_off/]
-  -f <FILE>     fixes folder
-                [default: ${bold}${fixes}$ansi_off/]
-  -h            display help
-EOM
+    -g         generate example input to file 
+    -G         generate example input to stdout
+    -p <FILE>  location of input file [default: STDIN]
+    -h         display help
+    eom
 
 	 exit 2
 }
 
-while getopts ":gepxf" optKey; do
+while getopts "Gg:ph" optKey; do
 	 case "$optKey" in
-        g)
-            generate=true
+        G)
+            arg_generate_stdout=true
             ;;
-		  e)
-			   exclusions="$OPTARG"
+		  g)
+			   arg_generate_file=true
 			   ;;
 		  p)
-			   participants="$OPTARG"
-			   ;;
-		  f)
-			   fixes="$OPTARG"
+			   arg_participants_input="$OPTARG"
 			   ;;
 		  h|*)
 			   usage
@@ -53,16 +63,7 @@ shift $((OPTIND - 1))
 
 
 checks () {
-    [ -n "$debug" ] && declare -p participants exclusions fixes
-    [ -n "$participants" ] && [ -d "$participants" ] || quit "cannot find participants folder: $participants"
-    num_participants="$( find "$participants" -type f | wc -l )"
-    [ $num_particpants -gt 0 ] || quit no particpants defined
-    [ -n "$exclusions" ] && [ -d "$exclusions" ] || info "no exclusions folder found: $exclusions"
-    [ -n "$fixes" ] && [ -d "$fixes" ] || info "no fixes folder found: $fixes"
-}
-
-generate_example_files () {
-    : 
+    warn checks not implemented yet
 }
 
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
