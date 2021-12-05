@@ -1,0 +1,11 @@
+]0;xterm-256colordeclare -i OPTIND="2"
+Picard =Nerys
+Riker -Picard
+Kirk -Spock
+Spock -Kirk
+Sisko -Nerys -Worf -O\'Brien
+Janeway -Chakotay -Kirk -Picard -Sisko
+Chakotay -Janeway
+T\'Pol
+O\'Brien
+Worf =Picard

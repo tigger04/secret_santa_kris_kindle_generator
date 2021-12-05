@@ -3,7 +3,6 @@
 #shellcheck source=helper.sh
 source ~/bin/helper.sh
 
-# decide whether this is appropriate:
 set -e
 unset arg_generate_stdout arg_generate_file arg_input_file
 
@@ -11,28 +10,31 @@ function usage {
 	 cat <<eom
     Usage: $(basename "$0") [OPTION]...
 
-    -g         generate example input to file 
-    -G         generate example input to stdout
+    -g         generate example input
+    -G         generate example input to file 
     -i <FILE>  location of input file [default: STDIN]
     -h         display help
 eom
 
-	 exit 2
 }
 
-while getopts "Gg:ih" optKey; do
+while getopts "Ggi:h" optKey; do
 	   case "$optKey" in
-          G)
+          g)
               arg_generate_stdout=true
               ;;
-		    g)
+		    G)
 			     arg_generate_file=true
 			     ;;
-		    i)  arg_input_file="$OPTARG"
+		    i)
+              arg_input_file="$OPTARG"
 			     ;;
-		    h|*)
-			     usage
-			     ;;
+          h)
+              usage && exit 0
+              ;;
+          *)
+              usage && exit 41
+	           ;;
 	   esac
 done
 
@@ -47,27 +49,39 @@ fixes="fixes.$run_id"
 
 generate () {
 
-    cat - <<<eof
-    Picard =Nerys
-    Riker -Picard
-    Kirk -Spock
-    Spock -Kirk
-    Sisko -Nerys -Worf -O\'Brien
-    Janeway -Chakotay -Kirk -Picard -Sisko
-    Chakotay -Janeway
-    T\'Pol
-    O\'Brien
-    Worf =Picard
-    eof
+    cat - <<eof
+Picard =Nerys
+Riker -Picard
+Kirk -Spock
+Spock -Kirk
+Sisko -Nerys -Worf -O\'Brien
+Janeway -Chakotay -Kirk -Picard -Sisko
+Chakotay -Janeway
+T\'Pol
+O\'Brien
+Worf =Picard
+eof
     
 }
 
+get_participants () {
+    grep -P '^[^ ]+'
+
+}
 
 
 
 checks () {
     warn checks not implemented yet
     return 0
+}
+
+get_matches () {
+    echo hello
+    cat -
+    exit 0
+
+    cat  "$participants"
 }
 
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
@@ -79,12 +93,15 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
         && exit $?
     
     [ -n "$arg_generate_file" ] \
-    && "$0" -g > "$arg_generate_file" \
+        && "$0" -g > "$participants" \
+        && exit $?
 
+    [ -n "$arg_generate_stdout" ] \
+        && generate \
+        && exit $?
 
-    
-            [ -n "$generate" ] && generate_example_files
-    checks
+    get_matches
+
 else
     echo "Happy debugging!"
 fi
