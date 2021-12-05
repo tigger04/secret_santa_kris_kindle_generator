@@ -40,11 +40,6 @@ declare -p OPTIND
 
 shift $((OPTIND - 1))
 # init switch flags
-<<<<<<< HEAD
-participants_data_file=participants.txt
-exclusions=exclusions
-fixes=fixes
-=======
 run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
 participants="participants.$run_id"
 exclusions="exclusions.$run_id"
@@ -66,129 +61,8 @@ generate () {
     eof
     
 }
->>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  -g            generate example input files and folders
-                at current directory
-  -p <FILE>     location of participant file
-                [default: ${bold}${participants_data_file}$ansi_off]
-  -h            display help
-EOM
-=======
-    -g         generate example input to file 
-    -G         generate example input to stdout
-    -p <FILE>  location of input file [default: STDIN]
-    -h         display help
-    eom
->>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
-
-	 exit 2
-}
-
-<<<<<<< HEAD
-
-generate_example_file () {
-    [ -e "$participants_data_file" ] && quit "$participants_data_file" already exists
-
-    cat > "$participants_data_file" <<eof
-Pike -Chin-Riley
-Chin-Riley -Pike
-Kirk -Spock =Picard
-Spock -Kirk
-Picard =Nerys -Riker
-Riker -Picard
-Sisko -Nerys
-Nerys -Sisko
-Janeway -Chakotay
-Chakotay -Janeway
-O'Brien =Spock -Crusher
-T'Pol =Worf
-eof
-
-    exit 0
-}
-
-
-checks () {
-    [ -n "$debug" ] && declare -p participants_data_file exclusions fixes
-    [ -n "$participants_data_file" ] && [ -f "$participants_data_file" ] || quit "cannot find participants_data_file file: $participants_data_file"
-    num_participants="$( wc -l < "$participants_data_file" )"
-    [ $num_participants -gt 0 ] || quit no particpants defined
-    info $num_participants found
-}
-
-load () {
-
-    if [ -n "$debug" ]; then
-        match_dir="matches.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
-        avoid_dir="matches.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
-        participants="$participants.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
-        mkdir "$match_dir" || die
-        mkdir "$avoid_dir" || die
-        [ -e "$participants" ] && die
-    else
-        match_dir=$(mktemp -d)
-        avoid_dir=$(mktemp -d)
-        participants=$(mktemp)
-    fi
-    
-    while read -ra line; do
-
-        hero="${line[0]}"
-
-        echo "$hero >> $participants"
-
-        for index in "${#line[@]}"; do
-            if [ index -ne 0 ]; then
-                item="${line[$index]}"
-
-                if [[ $item =~ ^-(.*)$ ]]; then
-                    echo "${BASH_REMATCH[1]} >> $avoid_dir/$item"
-                elif [[ $item =~ ^=(.*)$ ]]; then
-                    echo "${BASH_REMATCH[1]} >> $match_dir/$item"
-                fi
-            fi
-        done
-    done < "$participants_data_file"
-      
-}
-
-while getopts ":gepxf" optKey; do
-	 case "$optKey" in
-        g)
-            generate_example_file
-=======
-while getopts "Gg:ph" optKey; do
-	 case "$optKey" in
-        G)
-            arg_generate_stdout=true
->>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
-            ;;
-		  g)
-			   arg_generate_file=true
-			   ;;
-		  p)
-<<<<<<< HEAD
-			   participants_data_file="$OPTARG"
-			   ;;
-		  f)
-			   fixes="$OPTARG"
-=======
-			   arg_participants_input="$OPTARG"
->>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
-			   ;;
-		  h|*)
-			   usage
-			   ;;
-	 esac
-done
-
-shift $((OPTIND - 1))
-=======
->>>>>>> c7ea114bb14b1d0005a482b3c49675914bc8b511
 
 
 checks () {
@@ -196,9 +70,6 @@ checks () {
     return 0
 }
 
-<<<<<<< HEAD
-    load
-=======
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
     checks || die
 
@@ -214,7 +85,6 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
     
             [ -n "$generate" ] && generate_example_files
     checks
->>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 else
     echo "Happy debugging!"
 fi
