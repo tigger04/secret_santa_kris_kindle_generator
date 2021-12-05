@@ -1,12 +1,12 @@
-Pike
-Chin-Riley
-Kirk
-Spock
-Picard
-Riker
-Sisko
-Nerys
-Janeway
-Chakotay
-O'Brien
-T'Pol
+Pike -Chin-Riley
+Chin-Riley -Pike
+Kirk =Spock
+Spock -Kirk
+Picard -Riker
+Riker -Picard
+Sisko -Nerys
+Nerys -Sisko
+Janeway -Chakotay
+Chakotay -Janeway
+O'Brien =Spock
+T'Pol +Worf

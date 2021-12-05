@@ -7,7 +7,7 @@ source ~/bin/helper.sh
 set -e
 
 # init switch flags
-participants=participants.txt
+participants_data_file=participants.txt
 exclusions=exclusions
 fixes=fixes
 
@@ -18,11 +18,7 @@ Usage: $(basename "$0") [OPTION]...
   -g            generate example input files and folders
                 at current directory
   -p <FILE>     location of participant file
-                [default: ${bold}${participants}$ansi_off]
-  -e <FILE>     exclusions folder
-                [default: ${bold}${exclusions}$ansi_off/]
-  -f <FILE>     fixes folder
-                [default: ${bold}${fixes}$ansi_off/]
+                [default: ${bold}${participants_data_file}$ansi_off]
   -h            display help
 EOM
 
@@ -30,47 +26,82 @@ EOM
 }
 
 
-checks () {
-    [ -n "$debug" ] && declare -p participants exclusions fixes
-    [ -n "$participants" ] && [ -f "$participants" ] || quit "cannot find participants file: $participants"
-    num_participants="$( find "$participants" -type f | wc -l )"
-    [ $num_particpants -gt 0 ] || quit no particpants defined
-    [ -n "$exclusions" ] && [ -d "$exclusions" ] || info "no exclusions folder found: $exclusions"
-    [ -n "$fixes" ] && [ -d "$fixes" ] || info "no fixes folder found: $fixes"
-}
+generate_example_file () {
+    [ -e "$participants_data_file" ] && quit "$participants_data_file" already exists
 
-
-generate_example_files () {
-    [ -e "$participants" ] && quit "$participants" already exists
-
-    cat > "$participants" <<eof
-Pike
-Chin-Riley
-Kirk
-Spock
-Picard
-Riker
-Sisko
-Nerys
-Janeway
-Chakotay
-O'Brien
-T'Pol
+    cat > "$participants_data_file" <<eof
+Pike -Chin-Riley
+Chin-Riley -Pike
+Kirk -Spock =Picard
+Spock -Kirk
+Picard =Nerys -Riker
+Riker -Picard
+Sisko -Nerys
+Nerys -Sisko
+Janeway -Chakotay
+Chakotay -Janeway
+O'Brien =Spock -Crusher
+T'Pol =Worf
 eof
 
     exit 0
 }
 
+
+checks () {
+    [ -n "$debug" ] && declare -p participants_data_file exclusions fixes
+    [ -n "$participants_data_file" ] && [ -f "$participants_data_file" ] || quit "cannot find participants_data_file file: $participants_data_file"
+    num_participants="$( wc -l < "$participants_data_file" )"
+    [ $num_participants -gt 0 ] || quit no particpants defined
+    info $num_participants found
+}
+
+load () {
+
+    if [ -n "$debug" ]; then
+        match_dir="matches.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
+        avoid_dir="matches.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
+        participants="$participants.$EPOCHSECONDS.$RANDOM$RANDOM$RANDOM"
+        mkdir "$match_dir" || die
+        mkdir "$avoid_dir" || die
+        [ -e "$participants" ] && die
+    else
+        match_dir=$(mktemp -d)
+        avoid_dir=$(mktemp -d)
+        participants=$(mktemp)
+    fi
+    
+    while read -ra line; do
+
+        hero="${line[0]}"
+
+        echo "$hero >> $participants"
+
+        for index in "${#line[@]}"; do
+            if [ index -ne 0 ]; then
+                item="${line[$index]}"
+
+                if [[ $item =~ ^-(.*)$ ]]; then
+                    echo "${BASH_REMATCH[1]} >> $avoid_dir/$item"
+                elif [[ $item =~ ^=(.*)$ ]]; then
+                    echo "${BASH_REMATCH[1]} >> $match_dir/$item"
+                fi
+            fi
+        done
+    done < "$participants_data_file"
+      
+}
+
 while getopts ":gepxf" optKey; do
 	 case "$optKey" in
         g)
-            generate_example_files
+            generate_example_file
             ;;
 		  e)
 			   exclusions="$OPTARG"
 			   ;;
 		  p)
-			   participants="$OPTARG"
+			   participants_data_file="$OPTARG"
 			   ;;
 		  f)
 			   fixes="$OPTARG"
@@ -86,7 +117,7 @@ shift $((OPTIND - 1))
 
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
 
-    checks
+    load
 else
     echo "Happy debugging!"
 fi
