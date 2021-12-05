@@ -8,33 +8,35 @@ set -e
 unset arg_generate_stdout arg_generate_file arg_input_file
 
 function usage {
-	 cat <<<eom
+	 cat <<eom
     Usage: $(basename "$0") [OPTION]...
 
     -g         generate example input to file 
     -G         generate example input to stdout
     -i <FILE>  location of input file [default: STDIN]
     -h         display help
-    eom
+eom
 
 	 exit 2
 }
 
 while getopts "Gg:ih" optKey; do
-	 case "$optKey" in
-        G)
-            arg_generate_stdout=true
-            ;;
-		  g)
-			   arg_generate_file=true
-			   ;;
-		  i)  arg_input_file="$OPTARG"
-			   ;;
-		  h|*)
-			   usage
-			   ;;
-	 esac
+	   case "$optKey" in
+          G)
+              arg_generate_stdout=true
+              ;;
+		    g)
+			     arg_generate_file=true
+			     ;;
+		    i)  arg_input_file="$OPTARG"
+			     ;;
+		    h|*)
+			     usage
+			     ;;
+	   esac
 done
+
+declare -p OPTIND
 
 shift $((OPTIND - 1))
 # init switch flags
@@ -77,12 +79,11 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
         && exit $?
     
     [ -n "$arg_generate_file" ] \
-
     && "$0" -g > "$arg_generate_file" \
 
 
     
-    [ -n "$generate" ] && generate_example_files
+            [ -n "$generate" ] && generate_example_files
     checks
 else
     echo "Happy debugging!"
