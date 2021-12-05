@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+#shellcheck source=helper.sh
+source ~/bin/helper.sh
+
+# decide whether this is appropriate:
+set -e
+
+# init switch flags
+run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
+participants="participants.$run_id"
+exclusions="exclusions.$run_id"
+fixes="fixes.$run_id"
+
+generate () {
+
+    cat - <<<eof
+    Picard =Nerys
+    Riker -Picard
+    Kirk -Spock
+    Spock -Kirk
+    Sisko -Nerys -Worf -O\'Brien
+    Janeway -Chakotay -Kirk -Picard -Sisko
+    Chakotay -Janeway
+    T\'Pol
+    O\'Brien
+    Worf =Picard
+    eof
+    
+}
+
+function usage {
+	 cat <<<eom
+    Usage: $(basename "$0") [OPTION]...
+
+    -g         generate example input to file 
+    -G         generate example input to stdout
+    -p <FILE>  location of input file [default: STDIN]
+    -h         display help
+    eom
+
+	 exit 2
+}
+
+while getopts "Gg:ph" optKey; do
+	 case "$optKey" in
+        G)
+            arg_generate_stdout=true
+            ;;
+		  g)
+			   arg_generate_file=true
+			   ;;
+		  p)
+			   arg_participants_input="$OPTARG"
+			   ;;
+		  h|*)
+			   usage
+			   ;;
+	 esac
+done
+
+shift $((OPTIND - 1))
+
+
+checks () {
+    warn checks not implemented yet
+}
+
+if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+    [ -n "$generate" ] && generate_example_files
+    checks
+else
+    echo "Happy debugging!"
+fi
+

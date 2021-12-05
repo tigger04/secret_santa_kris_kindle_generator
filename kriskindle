@@ -7,24 +7,57 @@ source ~/bin/helper.sh
 set -e
 
 # init switch flags
+<<<<<<< HEAD
 participants_data_file=participants.txt
 exclusions=exclusions
 fixes=fixes
+=======
+run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
+participants="participants.$run_id"
+exclusions="exclusions.$run_id"
+fixes="fixes.$run_id"
+
+generate () {
+
+    cat - <<<eof
+    Picard =Nerys
+    Riker -Picard
+    Kirk -Spock
+    Spock -Kirk
+    Sisko -Nerys -Worf -O\'Brien
+    Janeway -Chakotay -Kirk -Picard -Sisko
+    Chakotay -Janeway
+    T\'Pol
+    O\'Brien
+    Worf =Picard
+    eof
+    
+}
+>>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 
 function usage {
-	 cat <<EOM
-Usage: $(basename "$0") [OPTION]...
+	 cat <<<eom
+    Usage: $(basename "$0") [OPTION]...
 
+<<<<<<< HEAD
   -g            generate example input files and folders
                 at current directory
   -p <FILE>     location of participant file
                 [default: ${bold}${participants_data_file}$ansi_off]
   -h            display help
 EOM
+=======
+    -g         generate example input to file 
+    -G         generate example input to stdout
+    -p <FILE>  location of input file [default: STDIN]
+    -h         display help
+    eom
+>>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 
 	 exit 2
 }
 
+<<<<<<< HEAD
 
 generate_example_file () {
     [ -e "$participants_data_file" ] && quit "$participants_data_file" already exists
@@ -96,15 +129,25 @@ while getopts ":gepxf" optKey; do
 	 case "$optKey" in
         g)
             generate_example_file
+=======
+while getopts "Gg:ph" optKey; do
+	 case "$optKey" in
+        G)
+            arg_generate_stdout=true
+>>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
             ;;
-		  e)
-			   exclusions="$OPTARG"
+		  g)
+			   arg_generate_file=true
 			   ;;
 		  p)
+<<<<<<< HEAD
 			   participants_data_file="$OPTARG"
 			   ;;
 		  f)
 			   fixes="$OPTARG"
+=======
+			   arg_participants_input="$OPTARG"
+>>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 			   ;;
 		  h|*)
 			   usage
@@ -115,9 +158,17 @@ done
 shift $((OPTIND - 1))
 
 
-if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+checks () {
+    warn checks not implemented yet
+}
 
+<<<<<<< HEAD
     load
+=======
+if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+    [ -n "$generate" ] && generate_example_files
+    checks
+>>>>>>> 728605cdfe6b6d9607088268871e652123dc708e
 else
     echo "Happy debugging!"
 fi
