@@ -1,0 +1,17 @@
+#!/usr/bin/env bats
+
+#shellcheck source=helper.sh
+source ~/bin/helper.sh
+# iteration=$EPOCHSECONDS.$RANDOM.$RANDOM.$RANDOM
+
+setup () {
+
+    cat - >testdata <<eom
+Data -Spot -Yarr
+"La Forge" =Crusher -Worf
+Worf -Troy
+Troy -Worf
+Yarr -Data
+eom
+}
+
