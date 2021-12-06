@@ -83,10 +83,31 @@ get_exclusions () {
     grep 
 }
 
-
 checks () {
-    warn checks not implemented yet
-    return 0
+
+    fail=0
+
+    num_assignments="$(cat "$participants"/*."$assignments" | wc -l)"
+    num_uniq_ass="$(cat "$participants"/*."$assignments" | sort -u | wc -l)"
+
+    if [ $num_assignments -eq $num_uniq_ass ]; then
+        info "uniq test pass"
+    else
+        fail=$((fail+1))
+    fi
+
+    matchtest1=$(mktemp)
+    matchtest2=$(mktemp)
+    cat "$participants"/*."$assignments" | sort -u > $matchtest1
+    cat "$assigned" | sort -u > $matchtest2
+
+    diff $matchtest1 $matchtest2 || fail=$((fail + 1))
+
+    for p in "$all"; do
+        recMatchesAgg="$( grep -F "$line" < "$assigned" | wc -l)"
+        recMatchesFiles="$( cat "$participants"/*."$assigned" | grep -F "$line" | wc -l )"
+             
+        return $fail
 }
 
 make_matches () {
@@ -109,6 +130,8 @@ run_tests () {
     generate | setup_data && setup_candidates || die
 
     make_matches || die
+
+    checks
         
 }
 
@@ -181,8 +204,12 @@ setup_data () {
 
         [ -n "$arg_tests" ] && run_tests && exit $?
 
-        cat - | setup_data
-        
+        cat - | setup_data && setup_candidates || die
+
+        make_matches || die
+
+        checks
+
 
     else
         echo "Happy debugging!"
