@@ -1,7 +1,8 @@
-#!/usr/bin/env bats
 
 #shellcheck source=helper.sh
-source ~/bin/helper.sh
+# source helper.sh
+#shellcheck source=./kriskindle
+source kriskindle
 # iteration=$EPOCHSECONDS.$RANDOM.$RANDOM.$RANDOM
 
 setup () {
@@ -13,5 +14,9 @@ Worf -Troy
 Troy -Worf
 Yarr -Data
 eom
+}
+
+@test "test data loaded" {
+    [ $(wc -l < testdata) -gt 4 ]
 }
 

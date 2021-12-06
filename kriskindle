@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 #shellcheck source=helper.sh
-source ~/bin/helper.sh
+source helper.sh
 
 set -e
-unset arg_generate_stdout arg_generate_file arg_input_file
+unset arg_generate_stdout arg_generate_file arg_input_file arg_tests
 
 function usage {
 	 cat <<eom
@@ -18,7 +18,7 @@ eom
 
 }
 
-while getopts "Ggi:h" optKey; do
+while getopts "Ggi:ht" optKey; do
 	 case "$optKey" in
         g)
             arg_generate_stdout=true
@@ -31,6 +31,9 @@ while getopts "Ggi:h" optKey; do
 			   ;;
         h)
             usage && exit 0
+            ;;
+        t)
+            arg_tests=true
             ;;
         *)
             usage && exit 41
@@ -70,7 +73,7 @@ get_participants () {
 }
 
 get_fixes () {
-
+    :
 }
 
 get_exclusions () {
@@ -91,6 +94,10 @@ get_matches () {
     get_participants | get matches
 }
 
+run_tests () {
+    [ $(wc -l < testdata) -gt 4 ]
+}
+
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
     checks || die
 
@@ -106,6 +113,8 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
     [ -n "$arg_generate_stdout" ] \
         && generate \
         && exit $?
+
+    [ -n "$arg_tests" ] && run_tests && exit $?
 
     cat - > "$input"
     get_matches
