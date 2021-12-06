@@ -44,6 +44,7 @@ run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
 participants="participants.$run_id"
 exclusions="exclusions.$run_id"
 fixes="fixes.$run_id"
+input="input.$run_id"
 
 generate () {
 
@@ -63,9 +64,18 @@ eof
 }
 
 get_participants () {
-    grep -Po '^[^ ]+'
+
+    grep -Po '^[^ ]+' < "$input"
+    
 }
 
+get_fixes () {
+
+}
+
+get_exclusions () {
+    grep 
+}
 
 
 checks () {
@@ -78,6 +88,7 @@ get_matches () {
     exit 0
 
     cat  "$participants"
+    get_participants | get matches
 }
 
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
@@ -96,6 +107,7 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
         && generate \
         && exit $?
 
+    cat - > "$input"
     get_matches
 
 else
