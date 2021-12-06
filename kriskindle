@@ -45,9 +45,11 @@ shift $((OPTIND - 1))
 # init switch flags
 run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
 participants="participants.$run_id"
-exclusions="exclusions.$run_id"
-fixes="fixes.$run_id"
-input="input.$run_id"
+exclusions="exclusions"
+assignments="assignments"
+candidates="candidates"
+assigned="$participants/assigned"
+all="$participants/all"
 
 generate () {
 
@@ -56,12 +58,13 @@ Picard =Nerys
 Riker -Picard
 Kirk -Spock
 Spock -Kirk
-Sisko -Nerys -Worf -O\'Brien
+Sisko -Nerys -Worf -O'Brien
 Janeway -Chakotay -Kirk -Picard -Sisko
 Chakotay -Janeway
-T\'Pol
-O\'Brien
+T'Pol
+O'Brien
 Worf =Picard
+"La Forge"
 eof
     
 }
@@ -87,39 +90,91 @@ checks () {
 }
 
 get_matches () {
-    cat -
-    exit 0
-
-    cat  "$participants"
-    get_participants | get matches
+    
+    :
 }
 
 run_tests () {
-    [ $(wc -l < testdata) -gt 4 ]
+
+    generate | setup_data && setup_candidates
+
+
+    
 }
 
-if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-    checks || die
+setup_candidates () {
 
-    [ -n "$arg_input_file" ] \
-        && info "using input file $arg_input_file" \
-        && "$0" < "$arg_input_file" \
-        && exit $?
+    touch "$assigned" || die
+
+    cat "$all" | while read -r part; do
+
+        cat "$all" \
+            | grep -vF "$part" \
+            | grep -vFf "$participants/$part.$exclusions" \
+            | grep -vFf "$assigned" \
+                   >> "$participants/$part.$candidates"
+    done
+}
+
+assign () {
+    [ $# -eq 2 ] || die
+
+    assfile="$participants/$1.$assignments"
+
+    if [ $(wc -c < "$assfile") -gt 0 ]; then
+        warn "$1 is already assigned to $( <"$assfile" ), adding $2"
+    fi
     
-    [ -n "$arg_generate_file" ] \
-        && "$0" -g > "$participants" \
-        && exit $?
+    echo "$2" >> "$assfile"
+    echo "$2" >> "assigned"
+}
 
-    [ -n "$arg_generate_stdout" ] \
-        && generate \
-        && exit $?
+setup_data () {
+    #  get_participants > $participants
 
-    [ -n "$arg_tests" ] && run_tests && exit $?
+    mkdir $participants || die
 
-    cat - > "$input"
-    get_matches
+    while read -r linestring; do
+        line=($linestring)
 
-else
-    echo "Happy debugging!"
-fi
+        [ ${#line} -gt 0 ] && this_part="${line[0]}" && echo "$this_part" >> "$all"
+
+        touch "$participants/$this_part.assignments" "$participants/$this_part.$exclusions" "$participants/$this_part.$candidates"
+        
+        for item in "${line[@]}"; do
+            if [[ $item =~ -(.*)$ ]]; then
+                echo "${BASH_REMATCH[1]}" >> "$participants/$this_part.$exclusions"
+            elif [[ $item =~ =(.*)$ ]]; then
+                echo "${BASH_REMATCH[1]}" >> "$participants/$this_part.$assignments"
+            else            
+                [[ "$item" != "$this_part" ]] && warn "Incorrect specification for $this_part: not sure what to do with $item"
+            fi
+        done
+    done
+}
+
+    if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+        checks || die
+
+        [ -n "$arg_input_file" ] \
+            && info "using input file $arg_input_file" \
+            && "$0" < "$arg_input_file" \
+            && exit $?
+        
+        [ -n "$arg_generate_file" ] \
+            && "$0" -g > "$participants" \
+            && exit $?
+
+        [ -n "$arg_generate_stdout" ] \
+            && generate \
+            && exit $?
+
+        [ -n "$arg_tests" ] && run_tests && exit $?
+
+        cat - | setup_data
+        
+
+    else
+        echo "Happy debugging!"
+    fi
 
