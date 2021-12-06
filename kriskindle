@@ -89,17 +89,27 @@ checks () {
     return 0
 }
 
-get_matches () {
-    
-    :
+make_matches () {
+
+    cat "$all" | while read -r line; do
+        p="$participants/$line"
+
+        shuf "$p.candidates" \
+            | grep -vFf "$assigned" \
+            | shuf \
+            | head -n 1 \
+            | tee -a "$assigned" >> "$p.assignments"
+    done
 }
+
+
 
 run_tests () {
 
-    generate | setup_data && setup_candidates
+    generate | setup_data && setup_candidates || die
 
-
-    
+    make_matches || die
+        
 }
 
 setup_candidates () {
