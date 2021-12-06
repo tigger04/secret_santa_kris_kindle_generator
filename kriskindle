@@ -19,26 +19,24 @@ eom
 }
 
 while getopts "Ggi:h" optKey; do
-	   case "$optKey" in
-          g)
-              arg_generate_stdout=true
-              ;;
-		    G)
-			     arg_generate_file=true
-			     ;;
-		    i)
-              arg_input_file="$OPTARG"
-			     ;;
-          h)
-              usage && exit 0
-              ;;
-          *)
-              usage && exit 41
-	           ;;
-	   esac
+	 case "$optKey" in
+        g)
+            arg_generate_stdout=true
+            ;;
+		  G)
+			   arg_generate_file=true
+			   ;;
+		  i)
+            arg_input_file="$OPTARG"
+			   ;;
+        h)
+            usage && exit 0
+            ;;
+        *)
+            usage && exit 41
+	         ;;
+	 esac
 done
-
-declare -p OPTIND
 
 shift $((OPTIND - 1))
 # init switch flags
@@ -65,8 +63,7 @@ eof
 }
 
 get_participants () {
-    grep -P '^[^ ]+'
-
+    grep -Po '^[^ ]+'
 }
 
 
@@ -77,7 +74,6 @@ checks () {
 }
 
 get_matches () {
-    echo hello
     cat -
     exit 0
 

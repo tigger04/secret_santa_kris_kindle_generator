@@ -1,5 +1,4 @@
-]0;xterm-256colordeclare -i OPTIND="2"
-Picard =Nerys
+]0;xterm-256colorPicard =Nerys
 Riker -Picard
 Kirk -Spock
 Spock -Kirk
