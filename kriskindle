@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #shellcheck source=helper.sh
-source helper.sh
+.≥≥ helper.sh
 
 set -e
 unset arg_generate_stdout arg_generate_file arg_input_file arg_tests
@@ -110,9 +110,23 @@ checks () {
         errortext "$line matches $recMatchesAgg or $recMatchesFiles"
         fail=$((fail+1))
     fi
-    done
     
     return $fail
+}
+
+match () {
+   while [ $# -gt 0 ] ; do
+       candidates_for "$1" | shuf | head -n 1 >> "$all/$1.match"
+       num_matches="$( wc -l < $all.$1.match  )"
+       
+       if [ $num_matches -ne 1 ] ; then
+           echo "$1 has $num_matches matches" >> "$fails"
+           # return 1
+       fi
+       shift
+   done
+
+   return 0
 }
 
 make_matches () {
@@ -132,12 +146,15 @@ make_matches () {
 
 run_tests () {
 
-    generate | setup_data && setup_candidates || die
-
-    make_matches || die
-
-    checks
+    testdata="$run/testdata"
     
+    generate  \
+    | setup_data
+    setup_candidates || die
+    make_matches || die
+    
+    checks
+                  
 }
 
 candidates_for () {
@@ -148,6 +165,7 @@ candidates_for () {
         | grep -vFf "$1.$exclusions" \
         | grep -vFf <( cat "$run"/*."$assignments" )
 }
+
 
 # setup_candidates () {
 
@@ -163,26 +181,13 @@ candidates_for () {
 #     done
 # }
 
-assign () {
-    [ $# -eq 2 ] || die
-
-    assfile="$run/$1.$assignments"
-
-    if [ $(wc -c < "$assfile") -gt 0 ]; then
-        warn "$1 is already assigned to $( <"$assfile" ), adding $2"
-    fi
-    
-    echo "$2" >> "$assfile"
-    echo "$2" >> "assigned"
-}
-
 setup_data () {
     #  get_participants > $participants
 
     mkdir $run || die
 
     while read -r linestring; do
-        readarray -r line <<< "$linestring"
+        readarray line <<< "$linestring"
         line=($linestring)
 
         [ ${#line} -gt 0 ] && this_part="${line[0]}" && echo "$this_part" >> "$all"
@@ -218,7 +223,7 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
 
     [ -n "$arg_tests" ] && run_tests && exit $?
 
-    cat - | setup_data && setup_candidates || die
+    cat - | setup_data || die
 
     make_matches || die
 
