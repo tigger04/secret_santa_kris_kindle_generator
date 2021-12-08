@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #shellcheck source=helper.sh
-.≥≥ helper.sh
+. helper.sh
 
 set -e
 unset arg_generate_stdout arg_generate_file arg_input_file arg_tests
@@ -44,20 +44,19 @@ done
 shift $((OPTIND - 1))
 # init switch flags
 
-declare -g run_id run
+declare -g run_id run all fails
 
-set_run_id () {
+reset_run_id () {
     run_id="${EPOCHSECONDS}.$RANDOM$RANDOM"
     run="run.$run_id"
     all="$run/all"
     fails="$run/fails"
+
+    mkdir "$run"
+    touch "$all" "$fails"
 }
 
-set_run_id
-exclusions="exclusions"
-assignments="assignments"
-candidates="candidates"
-# assigned="$participants/assigned"
+reset_run_id
 
 generate () {
 
@@ -67,7 +66,7 @@ Riker -Picard
 Kirk -Spock
 Spock -Kirk
 Sisko -Nerys -Worf -O'Brien
-Janeway -Chakotay -Kirk -Picard -Sisko
+Janeway -Kirk -Picard -Sisko -Spock -Riker -T'Pol -O'Brien -Worf -LaForge
 Chakotay -Janeway
 T'Pol
 O'Brien
@@ -79,39 +78,21 @@ eof
 
 checks () {
 
-    fail=0
-    fail_report="$fails"
+    num_matches="$(cat "$run"/*."$match" | wc -l)"
+    num_uniq_matches="$(cat "$run"/*."$match" | sort -u | wc -l)"
 
-    num_assignments="$(cat "$run"/*."$assignments" | wc -l)"
-    num_uniq_ass="$(cat "$run"/*."$assignments" | sort -u | wc -l)"
-
-    if [ $num_assignments -eq $num_uniq_ass ]; then
-        info "uniq test pass"
-    else
-        fail=$((fail+1))
+    if [ $num_matches -ne $num_uniq_matches ]; then
+        echo "matches ($num_matches) != unique matches ($num_uniq_matches"
     fi
 
-    # matchtest1=$(mktemp)
-    # matchtest2=$(mktemp)
-    # cat "$participants"/*."$assignments" > $matchtest1
-    # cat "$assigned" | sort -u > $matchtest2
-    # diff $matchtest1 $matchtest2 || fail=$((fail + 1))
-
-    cat "$all" | while read -r p; do
-        num_times_assigned="$(cat "$run"/*."$assigned" | grep -F "$p" | wc -l)"
-
-        fail=$((fail+1))
-    done
+    while read -r each_participant; do
+        num_times_matched="$(cat "$run"/*."$match" | grep -F "$each_participant" | wc -l)"
+        if [ $num_times_matched -ne 1 ] ; then
+            echo "$each_participant matched $num_times_matched times" >> $fails
+        fi
+    done < $all
     
-    recMatchesAgg="$( grep -F "$line" < "$assigned" | wc -l)"
-    recMatchesFiles="$( cat "$run"/*."$assigned" | grep -F "$line" | wc -l )"
-
-    if [ $recMatchesAgg -ne 1 ] || [ $recMatchesFiles -ne 1 ]; then
-        errortext "$line matches $recMatchesAgg or $recMatchesFiles"
-        fail=$((fail+1))
-    fi
-    
-    return $fail
+    return [ -s $fails ]
 }
 
 match () {
@@ -129,29 +110,12 @@ match () {
    return 0
 }
 
-make_matches () {
-
-    cat "$all" | while read -r line; do
-        p="$run/$line"
-
-        shuf "$p.candidates" \
-            | grep -vFf "$assigned" \
-            | shuf \
-            | head -n 1 \
-            | tee -a "$assigned" >> "$p.assignments"
-    done
-}
-
-
-
 run_tests () {
 
-    testdata="$run/testdata"
-    
     generate  \
-    | setup_data
-    setup_candidates || die
-    make_matches || die
+        | setup_data
+
+    cat $all | match
     
     checks
                   
@@ -162,43 +126,24 @@ candidates_for () {
     
     cat "$all" \
         | grep -vF "$1" \
-        | grep -vFf "$1.$exclusions" \
-        | grep -vFf <( cat "$run"/*."$assignments" )
+        | grep -vFf "$1.exclusions" \
+        | grep -vFf <( cat $run/*.match )
 }
 
-
-# setup_candidates () {
-
-#     touch "$assigned" || die
-
-#     cat "$all" | while read -r part; do
-
-#         cat "$all" \
-    #             | grep -vF "$part" \
-    #             | grep -vFf "$participants/$part.$exclusions" \
-    #             | grep -vFf "$assigned" \
-    #                    >> "$participants/$part.$candidates"
-#     done
-# }
-
 setup_data () {
-    #  get_participants > $participants
-
-    mkdir $run || die
 
     while read -r linestring; do
         readarray line <<< "$linestring"
-        line=($linestring)
 
         [ ${#line} -gt 0 ] && this_part="${line[0]}" && echo "$this_part" >> "$all"
 
-        touch "$run/$this_part.assignments" "$run/$this_part.$exclusions" "$run/$this_part.$candidates"
+        touch $run/$this_part.match $run/$this_part.exclusions
         
         for item in "${line[@]}"; do
             if [[ $item =~ -(.*)$ ]]; then
-                echo "${BASH_REMATCH[1]}" >> "$run/$this_part.$exclusions"
+                echo "${BASH_REMATCH[1]}" >> $run/$this_part.exclusions
             elif [[ $item =~ =(.*)$ ]]; then
-                echo "${BASH_REMATCH[1]}" >> "$run/$this_part.$assignments"
+                echo "${BASH_REMATCH[1]}" >> "$run/$this_part.$match"
             else            
                 [[ "$item" != "$this_part" ]] && warn "Incorrect specification for $this_part: not sure what to do with $item"
             fi
