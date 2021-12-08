@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
-#shellcheck source=helper.sh
-. helper.sh
+#shellcheck source=~/bin/helper.sh
+. ~/bin/helper.sh
 
 set -e
+declare -g run_id run all fails logfile iteration 
 max_iterations=1000
+iteration=0
 unset arg_generate_stdout arg_generate_file arg_tests arg_input_file input_file 
 
 logfile="$0.log"
+verbose_output_to="$logfile"
 timestamp begin >> "$logfile"
 
 function usage {
@@ -15,8 +18,8 @@ function usage {
     Usage: $(basename "$0") [OPTION]...
 
     -g         generate example input
-    -G         generate example input to file 
     -i <FILE>  location of input file [default: STDIN]
+    -m <NUM>   maximum number of randomized iterations
     -h         display help
 eom
 
@@ -39,6 +42,9 @@ while getopts "Ggi:ht" optKey; do
         t)
             arg_tests=true
             ;;
+        m)
+            max_iterations="$OPTARG"
+            ;;
         *)
             usage && exit 41
 	         ;;
@@ -48,7 +54,8 @@ done
 shift $((OPTIND - 1))
 # init switch flags
 
-declare -g run_id run all fails logfile
+verbose declare -p arg_generate_stdout arg_generate_file arg_input_file arg_tests max_iterations
+
 
 reset_run_id () {
     now="${EPOCHSECONDS}"
@@ -64,14 +71,22 @@ reset_run_id () {
 reset_run_id
 
 log () {
-    echo "$run_id $*" >> $logfile
+
+    logstring="$run_id ${FUNCNAME[1]} "
+
+    if [[ "$1" == "verbose" ]] ; then
+        shift
+        verbose "$logstring $*"
+    else    
+        echo "$logstring $*" >> $logfile
+    fi
 }
 
 fail () {
     fail_string="${FUNCNAME[1]}: $*"
     echo "$fail_string" >> $fails
 
-    log "fail: $fail_string"
+    log "$fail_string"
 }
 
 generate () {
@@ -94,6 +109,8 @@ eof
 
 checks () {
 
+    [ $iteration -eq 0 ] && return 1
+
     num_matches="$(cat "$run"/*."match" | wc -l)"
     num_uniq_matches="$(cat "$run"/*."match" | sort -u | wc -l)"
     num_participants="$(cat $all | wc -l)"
@@ -109,25 +126,27 @@ checks () {
     while read -r each_participant; do
         num_times_matched="$(cat "$run"/*."match" | grep -F "$each_participant" | wc -l)"
         if [ $num_times_matched -ne 1 ] ; then
-            fail "$each_participant matched $num_times_matched times"
+            fail "$each_participant matched $((num_times_matched)) times"
         fi
     done < $all
 
     diff <( cat $all | sort ) <( cat $run/*.match | sort ) 2>&1 >/dev/null || fail "the list of particpants in $all does not match the list of particpants matched in $run/*.match"
     
-    return [ -s $fails ]
+    [ -s $fails ] && return 1
 }
 
 match () {
-    while [ $# -gt 0 ] ; do
-        candidates_for "$1" | shuf | head -n 1 >> "$run/$1.match"
-        num_matches="$( wc -l < $all.$1.match  )"
+
+    cat - | while read -r participant; do
+        log verbose "candidates for $participant: $(candidates_for "$participant")"
+        candidates_for "$participant" | shuf | head -n 1 >> "$run/$participant.match"
+        log verbose "chose: $(cat "$run/$participant.match")"
+        num_matches="$( wc -l < $run/$participant.match  )"
         
         if [ $num_matches -ne 1 ] ; then
-            echo "$1 has $num_matches matches" >> "$fails"
-            return 1
+            fail "$participant has $((num_matches)) matches"
+            # return 1
         fi
-        shift
     done
 
     return 0
@@ -135,13 +154,8 @@ match () {
 
 run_tests () {
 
-    generate  \
-        | setup_data
-
-    cat $all | match
-    
-    checks
-    
+    # echo > "$logfile"
+    "$0" -g | "$0" -d
 }
 
 candidates_for () {
@@ -149,7 +163,8 @@ candidates_for () {
     
     cat "$all" \
         | grep -vF "$1" \
-        | grep -vFf "$1.exclusions" \
+        | grep -vFf "$run/$1.exclusions" \
+        | grep -vFf "$run/$1.match" \
         | grep -vFf <( cat $run/*.match )
 }
 
@@ -157,6 +172,7 @@ setup_data () {
 
     while read -r linestring; do
         line=( $linestring )
+        verbose declare -p line
 
         [ ${#line} -gt 0 ] && this_part="${line[0]}" && echo "$this_part" >> "$all"
 
@@ -174,22 +190,33 @@ setup_data () {
     done
 }
 
+
+finally () {
+    timestamp end >> $logfile
+}
+
 if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
+
+    if [ -n "$arg_tests" ]; then
+        run_tests
+        exit $?
+    fi
     
-    [ -n "$arg_generate_file" ] \
-        && "$0" -g > "$participants" \
-        && exit $?
+    if [ -n "$arg_generate_stdout" ]; then
+        generate
+        exit $?
+    fi
 
-    [ -n "$arg_generate_stdout" ] \
-        && generate \
-        && exit $?
-
-    [ -n "$arg_tests" ] && run_tests && exit $?
-
-    if [ -z "$arg_input_file" ]; then
+    log checking input file
+    verbose declare -p log_input_file
+    
+    if ! [ -n "$arg_input_file" ]; then
         input_file=$(mktemp)
         input_file_descriptor=STDIN
+        verbose declare -p input_file input_file_descriptor
         cat - > $input_file
+        verbose $(cat "$input_file")
+        
     else
         input_file="$arg_input_file"
         input_file_descriptor="$(nice_path "$input_file")"
@@ -199,10 +226,15 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
     num_records=$(( num_records )) # to lose the whitespace for display
     info "read ${bold}$((num_records))${bold_off} records from ${bold}${input_file_descriptor}${bold_off}"
 
-    while ! checks; do
+    iterate () {
         reset_run_id
         cat "$input_file" | setup_data
         cat $all | match
+        iteration=$((iteration + 1))
+    }
+
+    while ! checks && [ $iteration -le $max_iterations ]; do
+        iterate
     done
 
     if [ -s $fails ] ; then
@@ -214,9 +246,9 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
         echo -ne "$bigreen"
 
         cat $all | while read -r part; do
-            printf '%-15s ➡️ %s'
-            "$part"
-            "$(cat $run/$part.match)"
+            printf '%-15s ➡️ %s' \
+                   "$part" \
+                   "$(cat "$run/$part.match")"
         done
 
         echo -ne "$ansi_off"
@@ -225,7 +257,3 @@ if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
 else
     echo "Happy debugging!"
 fi
-
-finally () {
-    timestamp end >> $logfile
-}
