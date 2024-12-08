@@ -1,0 +1,5 @@
+Brian Julia # anything after the hash is ignored as a comment
+Ronan Louise Taḋg # names on the same line will not be allocated to each other
+Laura Tim # e.g. couples, members of the same house hold
+Ian Christine
+# all names separated by whitespace or newlines treated as new candidate names for Santa's list ho ho ho!

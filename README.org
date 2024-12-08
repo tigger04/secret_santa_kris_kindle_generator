@@ -1,0 +1,34 @@
+#+TITLE:  Secret Santa (Kriskindle) generator CLI
+CLI for generating random matches for kriskindle (also known as 'Secret Santa'), with options for specifying matches to avoid (e.g. where one half of a couple or household should not be allocated their partner). Input via STDIN results in STDOUT. Ho Ho Ho! 🎅🏻🦌🛷☃️❄️
+
+** Requirements
+Python 3.8+
+
+** Input data (STDIN or text file)
+#+begin_src txt
+Brian Julia # anything after the hash is ignored as a comment
+Ronan Louise Taḋg # names on the same line will not be allocated to each other
+Laura Tim # e.g. couples, members of the same house hold
+Ian Christine
+# all names separated by whitespace or newlines treated as new candidate names for Santa's list ho ho ho!
+#+end_src
+  
+** Usage
+#+begin_src sh
+~/bin/kriskindle$ python3 ./kriskindle.py < 2024.txt
+Number of candidates: 9
+Candidates: ['Ian', 'Tim', 'Taḋg', 'Brian', 'Christine', 'Laura', 'Ronan', 'Louise', 'Julia']
+Constraints (no two from the same line can pair): [['Brian', 'Julia'], ['Ronan', 'Louise', 'Taḋg'], ['Laura', 'Tim'], ['Ian', 'Christine']]
+
+Generated Matches:
+Ian → Louise
+Brian → Taḋg
+Taḋg → Laura
+Ronan → Christine
+Tim → Brian
+Christine → Julia
+Julia → Ronan
+Laura → Ian
+Louise → Tim
+After 18 iterations  
+#+end_src
